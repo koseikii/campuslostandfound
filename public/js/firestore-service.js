@@ -12,8 +12,6 @@
  * - Error handling and logging
  */
 
-console.log('📦 Firestore Service Module Loading...');
-
 // ============================================================================
 // SECTION 1: USER MANAGEMENT
 // ============================================================================
@@ -190,7 +188,7 @@ async function firestoreVerifyAccountLinking(authUser) {
                 email: authUser.email,
                 name: authUser.displayName || authUser.email.split('@')[0],
                 phone: '',
-                role: authUser.email === 'admin@campus.edu' ? 'admin' : 'user',
+                role: 'user',
                 avatar: authUser.photoURL || ''
             });
 

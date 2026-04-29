@@ -12,8 +12,6 @@
  * - Account recovery and security
  */
 
-console.log('📦 Enhanced Auth Service Module Loading...');
-
 // ============================================================================
 // SECTION 1: ENHANCED SIGNUP WITH AUTO USER DOC CREATION
 // ============================================================================

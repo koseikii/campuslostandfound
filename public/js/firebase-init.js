@@ -4,8 +4,6 @@
  * Configuration: pcdscampuslostandfound project
  */
 
-console.log('🔥 Firebase Init Module Loading...');
-
 // ========== FIREBASE CONFIGURATION ==========
 const firebaseConfig = {
     apiKey: "AIzaSyBf81niwlq0GPvyBdbrpik0JN1DySxbCXI",
@@ -17,11 +15,13 @@ const firebaseConfig = {
     measurementId: "G-1TWW3PG8S5"
 };
 
-console.log('📋 Firebase Config:', {
-    projectId: firebaseConfig.projectId,
-    authDomain: firebaseConfig.authDomain,
-    storageBucket: firebaseConfig.storageBucket
-});
+if (typeof appConfig !== 'undefined' && appConfig.app_debug) {
+    console.log('Firebase Config:', {
+        projectId: firebaseConfig.projectId,
+        authDomain: firebaseConfig.authDomain,
+        storageBucket: firebaseConfig.storageBucket
+    });
+}
 
 // ========== GLOBAL FIREBASE REFERENCES ==========
 let firebaseApp = null;
@@ -34,7 +34,7 @@ let isFirebaseInitialized = false;
 // ========== INITIALIZATION FUNCTION ==========
 async function initializeFirebase() {
     try {
-        console.log('🚀 Starting Firebase initialization...');
+        if (typeof appConfig !== 'undefined' && appConfig.app_debug) console.log('Starting Firebase initialization...');
 
         // Wrap SDK imports in error handling
         let initializeApp, getAuth, getFirestore, getStorage, getAnalytics;
@@ -80,24 +80,19 @@ async function initializeFirebase() {
 
         // Initialize Firebase app
         firebaseApp = initializeApp(firebaseConfig);
-        console.log('✅ Firebase App Initialized');
 
         // Initialize services
         firebaseAuth = getAuth(firebaseApp);
-        console.log('✅ Firebase Auth Initialized');
-
         firebaseDB = getFirestore(firebaseApp);
-        console.log('✅ Firestore Initialized');
-
         firebaseStorage = getStorage(firebaseApp);
-        console.log('✅ Firebase Storage Initialized');
 
         if (getAnalytics) {
             try {
                 firebaseAnalytics = getAnalytics(firebaseApp);
-                console.log('✅ Firebase Analytics Initialized');
             } catch (e) {
-                console.warn('⚠️ Firebase Analytics initialization warning:', e.message);
+                if (typeof appConfig !== 'undefined' && appConfig.app_debug) {
+                    console.warn('Firebase Analytics initialization warning:', e.message);
+                }
             }
         }
 
@@ -105,7 +100,7 @@ async function initializeFirebase() {
         try {
             const { enableIndexedDbPersistence } = await import("https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js");
             await enableIndexedDbPersistence(firebaseDB);
-            console.log('✅ Firestore Offline Persistence Enabled');
+            if (typeof appConfig !== 'undefined' && appConfig.app_debug) console.log('Firestore Offline Persistence Enabled');
         } catch (err) {
             if (err.code === 'failed-precondition') {
                 console.warn('⚠️ Offline persistence failed - multiple tabs open');
@@ -117,25 +112,27 @@ async function initializeFirebase() {
         }
 
         isFirebaseInitialized = true;
-        console.log('✨ Firebase Initialization Complete!');
+        if (typeof appConfig !== 'undefined' && appConfig.app_debug) console.log('Firebase Initialization Complete!');
 
-        // 🚀 NEW: Initialize module cache for optimization
+        // Initialize module cache for optimization
         if (typeof initializeFirebaseModuleCache === 'function') {
-            console.log('📦 Initializing Firebase module cache...');
+            if (typeof appConfig !== 'undefined' && appConfig.app_debug) console.log('Initializing Firebase module cache...');
             const cacheInitialized = await initializeFirebaseModuleCache();
             if (cacheInitialized) {
-                console.log('✅ Firebase module cache initialized - 30x faster!');
+                if (typeof appConfig !== 'undefined' && appConfig.app_debug) console.log('Firebase module cache initialized');
             } else {
-                console.warn('⚠️ Module cache initialization failed, falling back to standard imports');
+                console.warn('Module cache initialization failed, falling back to standard imports');
             }
         }
 
         return true;
 
     } catch (error) {
-        console.error('❌ Firebase initialization error:', error);
-        console.error('   Error code:', error.code);
-        console.error('   Error message:', error.message);
+        console.error('Firebase initialization error:', error);
+        if (typeof appConfig !== 'undefined' && appConfig.app_debug) {
+            console.error('Error code:', error.code);
+            console.error('Error message:', error.message);
+        }
         isFirebaseInitialized = false;
         return false;
     }
@@ -159,7 +156,7 @@ async function firebaseLogin(email, password) {
         const user = userCredential.user;
         const idToken = await user.getIdToken();
 
-        console.log('✅ Login successful:', user.email);
+        if (typeof appConfig !== 'undefined' && appConfig.app_debug) console.log('Login successful:', user.email);
 
         // Fetch full user data from Firestore
         let userData = {
@@ -186,19 +183,15 @@ async function firebaseLogin(email, password) {
                     role: firestoreData.role || 'user',
                     avatar: firestoreData.avatar || user.photoURL || ''
                 };
-                console.log('✅ User data fetched from Firestore:', userData);
+                if (typeof appConfig !== 'undefined' && appConfig.app_debug) console.log('User data fetched from Firestore');
             } else {
-                console.warn('⚠️ User data not found in Firestore, using defaults');
+                if (typeof appConfig !== 'undefined' && appConfig.app_debug) console.warn('User data not found in Firestore, using defaults');
             }
         } catch (firestoreError) {
-            console.warn('⚠️ Could not fetch full user data from Firestore:', firestoreError.message);
+            if (typeof appConfig !== 'undefined' && appConfig.app_debug) {
+                console.warn('Could not fetch full user data from Firestore:', firestoreError.message);
+            }
             // Continue with minimal data if Firestore fetch fails
-        }
-
-        // Automatically grant admin role to admin@campus.edu
-        if (email.toLowerCase() === 'admin@campus.edu') {
-            userData.role = 'admin';
-            console.log('👮 Admin account detected (admin@campus.edu), role set to admin');
         }
 
         return {
@@ -207,7 +200,7 @@ async function firebaseLogin(email, password) {
             token: idToken
         };
     } catch (error) {
-        console.error('❌ Login error:', error.message);
+        console.error('Login error:', error.message);
         return {
             success: false,
             error: getFirebaseErrorMessage(error.code)
@@ -249,7 +242,7 @@ async function firebaseSignup(name, email, phone, password, role = 'student') {
             status: 'active'
         });
 
-        console.log('✅ Signup successful:', email);
+        if (typeof appConfig !== 'undefined' && appConfig.app_debug) console.log('Signup successful:', email);
 
         return {
             success: true,
@@ -263,7 +256,7 @@ async function firebaseSignup(name, email, phone, password, role = 'student') {
             }
         };
     } catch (error) {
-        console.error('❌ Signup error:', error.message);
+        console.error('Signup error:', error.message);
         return {
             success: false,
             error: getFirebaseErrorMessage(error.code)
@@ -283,7 +276,7 @@ async function firebaseLogout() {
         const { signOut } = await import("https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js");
 
         await signOut(firebaseAuth);
-        console.log('✅ Logout successful');
+        if (typeof appConfig !== 'undefined' && appConfig.app_debug) console.log('Logout successful');
 
         return {
             success: true
@@ -378,4 +371,4 @@ if (typeof module !== 'undefined' && module.exports) {
     };
 }
 
-console.log('✅ Firebase Init Module Loaded');
+// Firebase Init Module ready

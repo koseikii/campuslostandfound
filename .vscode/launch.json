@@ -2,23 +2,24 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Open in Safari",
-            "type": "safari",
-            "request": "attach",
+            "name": "Open in Chrome",
+            "type": "chrome",
+            "request": "launch",
             "url": "http://localhost:8000",
-            "preLaunchTask": "Start Server & Open in Safari",
+            "preLaunchTask": "Start Server & Open in Chrome",
             "presentation": {
                 "hidden": false,
-                "group": "Safari"
+                "group": "Chrome"
             }
         },
         {
-            "name": "Safari - Debug",
-            "type": "safari",
-            "request": "attach",
+            "name": "Chrome - Debug",
+            "type": "chrome",
+            "request": "launch",
             "url": "http://localhost:8000",
             "sourceMaps": true,
-            "preLaunchTask": "Start Server & Open in Safari"
+            "preLaunchTask": "Start Server & Open in Chrome",
+            "webRoot": "${workspaceFolder}/public"
         }
     ]
 }

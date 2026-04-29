@@ -2,7 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Start Server & Open in Safari",
+            "label": "Start Server & Open in Chrome",
             "type": "shell",
             "command": "python3",
             "args": [
@@ -35,15 +35,15 @@
             }
         },
         {
-            "label": "Open in Safari",
+            "label": "Open in Chrome",
             "type": "shell",
             "command": "open",
             "args": [
                 "-a",
-                "Safari",
+                "Google Chrome",
                 "http://localhost:8000"
             ],
-            "dependsOn": "Start Server & Open in Safari",
+            "dependsOn": "Start Server & Open in Chrome",
             "problemMatcher": [],
             "presentation": {
                 "reveal": "silent"

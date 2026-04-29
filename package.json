@@ -1,0 +1,23 @@
+{
+    "name": "pcds-campus-lost-found",
+    "version": "1.0.0",
+    "description": "Campus Lost and Found Management System",
+    "main": "public/index.html",
+    "scripts": {
+        "start": "http-server public -p 8080 -o",
+        "deploy": "vercel",
+        "build": "echo 'Build complete'"
+    },
+    "keywords": [
+        "lost-and-found",
+        "campus",
+        "firebase",
+        "management"
+    ],
+    "author": "PCDS Campus",
+    "license": "ISC",
+    "devDependencies": {
+        "http-server": "^14.1.1",
+        "vercel": "^28.0.0"
+    }
+}

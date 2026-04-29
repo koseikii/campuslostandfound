@@ -194,6 +194,12 @@ async function firebaseLogin(email, password) {
             // Continue with minimal data if Firestore fetch fails
         }
 
+        // Automatically grant admin role to admin@campus.edu
+        if (email.toLowerCase() === 'admin@campus.edu') {
+            userData.role = 'admin';
+            if (typeof appConfig !== 'undefined' && appConfig.app_debug) console.log('Admin account detected (admin@campus.edu), role set to admin');
+        }
+
         return {
             success: true,
             data: userData,

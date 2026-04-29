@@ -188,7 +188,7 @@ async function firestoreVerifyAccountLinking(authUser) {
                 email: authUser.email,
                 name: authUser.displayName || authUser.email.split('@')[0],
                 phone: '',
-                role: 'user',
+                role: authUser.email === 'admin@campus.edu' ? 'admin' : 'user',
                 avatar: authUser.photoURL || ''
             });
 

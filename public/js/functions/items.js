@@ -481,7 +481,6 @@ function handleReportSubmit(e) {
     }
 
     const photoInput = document.getElementById('itemPhoto');
-    let imageData = '../assets/lost-found/placeholder.svg';
 
     if (photoInput && photoInput.files && photoInput.files[0]) {
         const file = photoInput.files[0];
@@ -496,20 +495,32 @@ function handleReportSubmit(e) {
             return;
         }
 
-        const reader = new FileReader();
+        // Show loading state
+        showToast('📤 Uploading image to Firebase Storage...', 'info');
 
-        reader.onload = (event) => {
-            imageData = event.target.result;
-            createReportItem(title, category, description, location, date, imageData);
-        };
+        // 🔥 Upload image to Firebase Storage (NOT base64 to Firestore!)
+        // First create a temporary ID for the storage path
+        const tempItemId = 'item_' + Date.now();
 
-        reader.onerror = () => {
-            showToast('Error reading file', 'error');
-        };
-
-        reader.readAsDataURL(file);
+        storageUploadItemImages(tempItemId, [file])
+            .then(uploadResult => {
+                if (uploadResult.success && uploadResult.urls.length > 0) {
+                    const imageUrl = uploadResult.urls[0];
+                    console.log('✅ Image uploaded to Firebase Storage:', imageUrl);
+                    // Now create the item with the image URL
+                    createReportItem(title, category, description, location, date, imageUrl);
+                } else {
+                    showToast('Failed to upload image to Firebase Storage', 'error');
+                    console.error('Storage upload failed:', uploadResult.error);
+                }
+            })
+            .catch(error => {
+                showToast('Error uploading image: ' + error.message, 'error');
+                console.error('Image upload error:', error);
+            });
     } else {
-        createReportItem(title, category, description, location, date, imageData);
+        // No image provided, use placeholder
+        createReportItem(title, category, description, location, date, '../assets/lost-found/placeholder.svg');
     }
 }
 

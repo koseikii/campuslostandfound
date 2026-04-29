@@ -98,7 +98,34 @@ async function handleReportItem(event) {
         const btn = form.querySelector('button[type="submit"]');
         const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reporting item...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+        // 🔥 Handle image upload to Firebase Storage (if file provided)
+        let imageUrl = '';
+        const imageInput = document.getElementById('itemImage') || form.querySelector('input[type="file"][name*="image"]');
+
+        if (imageInput && imageInput.files && imageInput.files[0]) {
+            const file = imageInput.files[0];
+
+            if (file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading image...';
+
+                const tempItemId = 'item_' + Date.now();
+                const uploadResult = await storageUploadItemImages(tempItemId, [file]);
+
+                if (uploadResult.success && uploadResult.urls.length > 0) {
+                    imageUrl = uploadResult.urls[0];
+                    console.log('✅ Image uploaded to Firebase Storage:', imageUrl);
+                } else {
+                    console.warn('⚠️ Image upload failed, continuing with placeholder');
+                    imageUrl = '../assets/lost-found/placeholder.svg';
+                }
+            }
+        } else {
+            imageUrl = '../assets/lost-found/placeholder.svg';
+        }
+
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving to database...';
 
         // Prepare data
         const itemData = {
@@ -121,7 +148,7 @@ async function handleReportItem(event) {
             color: formData.get('color') || '',
             size: formData.get('size') || '',
             distinctive_features: formData.get('distinctive_features') || '',
-            image_url: formData.get('image_url') || '',
+            image_url: imageUrl,
             status: item_type,
             resolved: false,
             matched: false,

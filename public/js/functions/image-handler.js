@@ -4,9 +4,18 @@ const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 /**
- * Handles image file upload and converts to base64
+ * 🔥 UPDATED: Upload image to Firebase Storage instead of base64 conversion
+ * REASON: base64 in Firestore is slow and expensive
+ * 
+ * NEW APPROACH:
+ * 1. Upload file to Firebase Storage
+ * 2. Get download URL
+ * 3. Return URL (not base64)
+ * 
+ * @param {File} file - Image file to upload
+ * @returns {Promise<object>} - Returns {url, name, size, type, timestamp} or error
  */
-function handleImageUpload(file) {
+async function handleImageUpload(file) {
     return new Promise((resolve, reject) => {
         // Validate file type
         if (!ALLOWED_TYPES.includes(file.type)) {
@@ -20,26 +29,29 @@ function handleImageUpload(file) {
             return;
         }
 
-        const reader = new FileReader();
+        // 🔥 Use Firebase Storage instead of FileReader + base64
+        const tempItemId = 'preview_' + Date.now();
 
-        reader.onload = (e) => {
-            const base64 = e.target.result;
-            resolve({
-                data: base64,
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                timestamp: Date.now()
+        storageUploadItemImages(tempItemId, [file])
+            .then(uploadResult => {
+                if (uploadResult.success && uploadResult.urls.length > 0) {
+                    resolve({
+                        url: uploadResult.urls[0],  // Get download URL from Storage
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        timestamp: Date.now()
+                    });
+                } else {
+                    reject('Failed to upload image to Firebase Storage: ' + uploadResult.error);
+                }
+            })
+            .catch(error => {
+                reject('Image upload error: ' + error.message);
             });
-        };
-
-        reader.onerror = () => {
-            reject('Failed to read file');
-        };
-
-        reader.readAsDataURL(file);
     });
 }
+
 
 /**
  * Handles photo preview for report/edit forms
@@ -53,15 +65,15 @@ function handlePhotoPreview(e) {
             const previewContainer = e.target.parentElement.querySelector('.photo-preview');
             previewContainer.innerHTML = `
                 <div style="position: relative; display: inline-block; width: 100%;">
-                    <img src="${imageData.data}" style="max-width: 100%; border-radius: 8px; margin-top: 10px;">
+                    <img src="${imageData.url}" style="max-width: 100%; border-radius: 8px; margin-top: 10px;">
                     <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
                         ${(imageData.size / 1024 / 1024).toFixed(2)} MB
                     </div>
                 </div>
             `;
 
-            // Store the image data in a data attribute for submission
-            e.target.dataset.imageData = JSON.stringify(imageData);
+            // Store the image URL in a data attribute for submission
+            e.target.dataset.imageUrl = imageData.url;
         })
         .catch(error => {
             showToast(error, 'error');

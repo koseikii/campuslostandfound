@@ -12,7 +12,31 @@ console.log('🔧 Firebase Implementation Module Loading...');
  */
 async function firebaseAddDocument(collection, data) {
     try {
-        const { collection: collectionRef, addDoc } = await import("https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js");
+        // Check if firebaseDB is initialized
+        if (!firebaseDB) {
+            console.error('❌ Firestore not initialized');
+            return { success: false, error: 'Firestore not initialized' };
+        }
+
+        // Try to use cached modules first for better performance
+        let addDoc, collectionRef;
+
+        if (typeof getFirestoreModule === 'function') {
+            try {
+                const fsModule = getFirestoreModule();
+                addDoc = fsModule.addDoc;
+                collectionRef = fsModule.collection;
+            } catch (e) {
+                console.warn('⚠️ Cached modules not available, falling back to direct import');
+                const fsModule = await import("https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js");
+                addDoc = fsModule.addDoc;
+                collectionRef = fsModule.collection;
+            }
+        } else {
+            const fsModule = await import("https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js");
+            addDoc = fsModule.addDoc;
+            collectionRef = fsModule.collection;
+        }
 
         const ref = collectionRef(firebaseDB, collection);
         const docRef = await addDoc(ref, {

@@ -288,7 +288,7 @@ function viewMyItems() {
                                 <i class="fas fa-check"></i>
                             </button>
                         ` : ''}
-                        <button class="btn btn-danger btn-sm" onclick="deleteItem(${item.id}); viewMyItems();">
+                        <button class="btn btn-danger btn-sm" onclick="deleteItemFromUserPanel(${item.id});" title="Delete this item">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -711,6 +711,112 @@ function permanentlyDeleteItem(itemId) {
         }
     } catch (error) {
         console.error('❌ Error permanently deleting item:', error);
+        if (typeof showToast === 'function') {
+            showToast('Error deleting item: ' + error.message, 'error');
+        }
+    }
+}
+
+// ========== DELETE ITEM FROM USER PANEL ==========
+
+function deleteItemFromUserPanel(itemId) {
+    try {
+        if (!itemId) {
+            console.error('❌ Invalid item ID');
+            if (typeof showToast === 'function') {
+                showToast('Invalid item ID', 'error');
+            }
+            return;
+        }
+
+        // Find the item to get details
+        const item = items.find(i => i.id === itemId);
+        if (!item) {
+            console.error('❌ Item not found:', itemId);
+            if (typeof showToast === 'function') {
+                showToast('Item not found', 'error');
+            }
+            return;
+        }
+
+        // Check ownership
+        if (currentUser && currentUser.id !== item.userId && currentUser.role !== 'admin') {
+            console.warn('⚠️ User does not own this item');
+            if (typeof showToast === 'function') {
+                showToast('You can only delete your own items', 'error');
+            }
+            return;
+        }
+
+        // Show confirmation dialog
+        if (!confirm(`Are you sure you want to delete "${item.title}"? This action cannot be undone.`)) {
+            console.log('User cancelled item deletion');
+            return;
+        }
+
+        console.log('🗑️ Deleting item from user panel:', itemId);
+
+        // Remove from items array
+        const index = items.findIndex(i => i.id === itemId);
+        if (index !== -1) {
+            items.splice(index, 1);
+            console.log('✓ Item removed from array');
+        }
+
+        // Save data locally
+        if (typeof saveData === 'function') {
+            saveData();
+            console.log('✓ Data saved locally');
+        }
+
+        // Delete from Firebase if available
+        const fbId = item.firebaseId || item.id;
+        if (fbId && typeof firebaseDeleteDocument === 'function') {
+            console.log('📡 Syncing deletion to Firebase:', fbId);
+            firebaseDeleteDocument('items', fbId)
+                .then(result => {
+                    if (result.success) {
+                        console.log('✅ Item permanently deleted from Firebase:', fbId);
+                    } else {
+                        console.warn('⚠️ Firebase delete failed:', result.error);
+                    }
+                })
+                .catch(err => {
+                    console.error('❌ Firebase delete error:', err);
+                });
+        }
+
+        // Log audit action
+        if (typeof logAuditAction === 'function' && currentUser) {
+            logAuditAction('ITEM_DELETED', currentUser.id, {
+                itemId: itemId,
+                title: item.title,
+                source: 'user_panel'
+            });
+        }
+
+        // Show success message
+        if (typeof showToast === 'function') {
+            showToast('Item deleted successfully!', 'success');
+        }
+
+        // Update stats if available
+        if (typeof updateStats === 'function') {
+            updateStats();
+        }
+
+        // Update main items view if available
+        if (typeof renderItems === 'function') {
+            renderItems();
+        }
+
+        // Refresh the user panel modal with updated items list
+        console.log('🔄 Refreshing My Items modal...');
+        viewMyItems();
+
+        console.log('✅ Item deletion complete');
+    } catch (error) {
+        console.error('❌ Error deleting item from user panel:', error);
         if (typeof showToast === 'function') {
             showToast('Error deleting item: ' + error.message, 'error');
         }

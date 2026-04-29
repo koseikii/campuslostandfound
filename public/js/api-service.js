@@ -198,18 +198,19 @@ class APIService {
                 return result;
             }
 
-            // Fallback to local signup
-            return this.signupLocal(name, email, phone, password, role);
+            // Fallback to local signup (now async)
+            return await this.signupLocal(name, email, phone, password, role);
         } catch (error) {
             console.error('Signup error:', error);
-            return this.signupLocal(name, email, phone, password, role);
+            // Fallback to local signup (now async)
+            return await this.signupLocal(name, email, phone, password, role);
         }
     }
 
     /**
      * Local signup fallback
      */
-    signupLocal(name, email, phone, password, role) {
+    async signupLocal(name, email, phone, password, role) {
         try {
             const users = JSON.parse(localStorage.getItem('users') || '[]');
 
@@ -231,12 +232,32 @@ class APIService {
                 role: role || 'student',
                 created_at: new Date().toISOString(),
                 avatar: '',
-                bio: ''
+                bio: '',
+                loginHistory: [],
+                lastLogin: null
             };
 
             users.push(newUser);
             localStorage.setItem('users', JSON.stringify(users));
             localStorage.setItem('currentUser', JSON.stringify(newUser));
+
+            // ✅ FIX: Also save new user to Firebase so it appears in admin panel
+            if (typeof firebaseAddDocument === 'function' && typeof isFirebaseReady === 'function') {
+                try {
+                    if (isFirebaseReady()) {
+                        const { password: pwd, ...userForFirebase } = newUser;
+                        const firebaseResult = await firebaseAddDocument('users', userForFirebase);
+                        if (firebaseResult.success) {
+                            console.log('✅ User also saved to Firebase:', firebaseResult.id);
+                        } else {
+                            console.warn('⚠️ Failed to save user to Firebase, but local signup succeeded');
+                        }
+                    }
+                } catch (firebaseError) {
+                    console.warn('⚠️ Firebase save failed, but local signup succeeded:', firebaseError);
+                    // Continue anyway - user is saved locally
+                }
+            }
 
             const { password: pwd, ...userWithoutPassword } = newUser;
             return {

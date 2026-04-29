@@ -32,7 +32,8 @@ async function syncItemsFromFirebase() {
                 resolved: item.resolved || false,
                 matched: item.matched || false,
                 category: item.category || item.category_id,
-                location: item.location || item.location_description || 'Campus'
+                location: item.location || item.location_description || 'Campus',
+                date: item.date || item.found_on_date || new Date().toISOString().split('T')[0]
             }));
 
             // Build set of Firebase IDs

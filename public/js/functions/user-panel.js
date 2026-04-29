@@ -268,7 +268,12 @@ function viewMyItems() {
         if (myItems.length === 0) {
             myItemsList.innerHTML = '<p style="text-align: center; color: var(--text-muted);">You haven\'t reported any items yet.</p>';
         } else {
-            myItemsList.innerHTML = myItems.map(item => `
+            myItemsList.innerHTML = myItems.map(item => {
+                // Handle both old (location/date) and new (location_description/found_on_date) field names
+                const displayLocation = item.location || item.location_description || 'Unknown location';
+                const displayDate = formatDate(item.date || item.found_on_date);
+
+                return `
                 <div class="my-item-card">
                     <div class="my-item-info">
                         <h4>${item.title}</h4>
@@ -277,7 +282,7 @@ function viewMyItems() {
                             ${item.matched ? '<span class="badge badge-matched"><i class="fas fa-star"></i> Matched</span>' : ''}
                             ${item.resolved ? '<span class="badge badge-resolved"><i class="fas fa-check-circle"></i> Resolved</span>' : ''}
                         </p>
-                        <p>${item.location} • ${formatDate(item.date)}</p>
+                        <p>${displayLocation} • ${displayDate}</p>
                     </div>
                     <div style="display: flex; gap: 8px;">
                         <button class="btn btn-secondary btn-sm" onclick="editItem(${item.id}); closeMyItemsModal();">
@@ -293,7 +298,7 @@ function viewMyItems() {
                         </button>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         const myItemsModal = document.getElementById('myItemsModal');

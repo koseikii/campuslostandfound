@@ -574,6 +574,10 @@ function createReportItem(title, category, description, location, date, imageDat
             // Add to local items with ID from backend
             newItem.id = result.data.id;
             newItem.firebaseId = result.data.id;
+            // Ensure location and date are set (normalize)
+            if (!newItem.location) newItem.location = location;
+            if (!newItem.date) newItem.date = date;
+
             checkMatches(newItem);
             items.unshift(newItem);
 
@@ -584,6 +588,8 @@ function createReportItem(title, category, description, location, date, imageDat
                 category_id: categoryId,
                 item_type: currentReportType,
                 location_id: locationId,
+                location_description: location,
+                found_on_date: date,
                 user_id: currentUser.id,
                 uid: currentUser.uid || currentUser.id,
                 userId: currentUser.id,

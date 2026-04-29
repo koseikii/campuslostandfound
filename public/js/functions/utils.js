@@ -6,6 +6,33 @@ function formatDate(dateString) {
     return date.toLocaleDateString('en-US', options);
 }
 
+/**
+ * Normalize item object to ensure consistent field names
+ * Maps Firebase field names to standard field names
+ * @param {object} item - Item object from database
+ * @returns {object} - Normalized item with standard field names
+ */
+function normalizeItem(item) {
+    if (!item) return item;
+
+    return {
+        ...item,
+        // Ensure location field exists
+        location: item.location || item.location_description || 'Unknown',
+        // Ensure date field exists
+        date: item.date || item.found_on_date || new Date().toISOString().split('T')[0],
+        // Ensure category is string
+        category: item.category || item.category_id || 'Other'
+    };
+}
+
+/**
+ * Normalize multiple items
+ */
+function normalizeItems(itemsArray) {
+    return itemsArray.map(normalizeItem);
+}
+
 function formatTimeAgo(timestamp) {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
 

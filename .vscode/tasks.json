@@ -1,0 +1,53 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start Server & Open in Safari",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "-m",
+                "http.server",
+                "8000",
+                "--directory",
+                "${workspaceFolder}/public"
+            ],
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": {
+                    "regexp": "^.*$",
+                    "file": 1,
+                    "location": 2,
+                    "message": 3
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "Serving HTTP",
+                    "endsPattern": "Keyboard interrupt"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "Open in Safari",
+            "type": "shell",
+            "command": "open",
+            "args": [
+                "-a",
+                "Safari",
+                "http://localhost:8000"
+            ],
+            "dependsOn": "Start Server & Open in Safari",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent"
+            }
+        }
+    ]
+}

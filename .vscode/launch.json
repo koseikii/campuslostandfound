@@ -1,0 +1,24 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Open in Safari",
+            "type": "safari",
+            "request": "attach",
+            "url": "http://localhost:8000",
+            "preLaunchTask": "Start Server & Open in Safari",
+            "presentation": {
+                "hidden": false,
+                "group": "Safari"
+            }
+        },
+        {
+            "name": "Safari - Debug",
+            "type": "safari",
+            "request": "attach",
+            "url": "http://localhost:8000",
+            "sourceMaps": true,
+            "preLaunchTask": "Start Server & Open in Safari"
+        }
+    ]
+}

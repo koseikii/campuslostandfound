@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" width="400" height="200">
+  <!-- Background -->
+  <rect width="400" height="200" fill="#f0f2f5"/>
+  
+  <!-- Decorative circles -->
+  <circle cx="80" cy="50" r="40" fill="#e3f2fd" opacity="0.5"/>
+  <circle cx="320" cy="150" r="35" fill="#f3e5f5" opacity="0.5"/>
+  
+  <!-- Lost & Found Text -->
+  <text x="200" y="60" font-size="32" font-weight="bold" text-anchor="middle" fill="#1976d2">
+    Lost &amp; Found
+  </text>
+  
+  <!-- Lost icon (left side) -->
+  <g transform="translate(80, 110)">
+    <!-- Question mark circle -->
+    <circle cx="0" cy="0" r="25" fill="#ff6b6b" opacity="0.1" stroke="#ff6b6b" stroke-width="2"/>
+    <text x="-3" y="12" font-size="28" font-weight="bold" text-anchor="middle" fill="#ff6b6b">?</text>
+  </g>
+  
+  <!-- Found icon (right side) -->
+  <g transform="translate(320, 110)">
+    <!-- Checkmark circle -->
+    <circle cx="0" cy="0" r="25" fill="#4caf50" opacity="0.1" stroke="#4caf50" stroke-width="2"/>
+    <!-- Checkmark -->
+    <polyline points="-10,0 -2,8 15,-8" stroke="#4caf50" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- Center icon (briefcase/item) -->
+  <g transform="translate(200, 130)">
+    <!-- Briefcase -->
+    <rect x="-20" y="-5" width="40" height="25" rx="2" fill="none" stroke="#757575" stroke-width="2"/>
+    <rect x="-20" y="-5" width="40" height="8" rx="2" fill="#757575" opacity="0.2"/>
+    <circle cx="-10" cy="0" r="1.5" fill="#757575"/>
+    <circle cx="10" cy="0" r="1.5" fill="#757575"/>
+  </g>
+  
+  <!-- Helper text -->
+  <text x="200" y="175" font-size="12" text-anchor="middle" fill="#666" opacity="0.7">
+    Upload item photos to see them here
+  </text>
+</svg>

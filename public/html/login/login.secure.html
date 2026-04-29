@@ -1,0 +1,390 @@
+<!-- Secure Login Form with CSRF Protection -->
+<div id="login-form-container" class="login-container">
+    <div class="login-box">
+        <h2>🔒 PCDS Campus - Secure Login</h2>
+
+        <!-- SECURITY: CSRF Token -->
+        <input type="hidden" id="csrf-token" value="">
+
+        <form id="secure-login-form">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="your.email@pcds.edu"
+                    autocomplete="email">
+                <span class="error-message" id="email-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password"
+                    autocomplete="current-password">
+                <span class="error-message" id="password-error"></span>
+                <div class="password-strength" id="password-strength">
+                    <div class="strength-indicator"></div>
+                </div>
+            </div>
+
+            <div class="form-group checkbox">
+                <input type="checkbox" id="remember-me" name="remember-me">
+                <label for="remember-me">Remember me (30 days)</label>
+            </div>
+
+            <button type="submit" class="login-btn">
+                <span class="btn-text">Sign In Securely</span>
+                <span class="spinner" style="display:none;"></span>
+            </button>
+
+            <div class="error-message" id="login-error" style="display:none;"></div>
+            <div class="success-message" id="login-success" style="display:none;"></div>
+        </form>
+
+        <div class="login-footer">
+            <a href="#forgot-password">Forgot password?</a> |
+            <a href="#signup">Create account</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .login-box {
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .login-box h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #555;
+        font-weight: 600;
+    }
+
+    .form-group input[type="email"],
+    .form-group input[type="password"] {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+
+    .form-group input[type="email"]:focus,
+    .form-group input[type="password"]:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+    }
+
+    .password-strength {
+        margin-top: 8px;
+        height: 4px;
+        background: #eee;
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .password-strength .strength-indicator {
+        height: 100%;
+        width: 0%;
+        background: #e74c3c;
+        transition: width 0.3s, background 0.3s;
+    }
+
+    .login-btn {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .login-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .login-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .error-message {
+        display: block;
+        color: #e74c3c;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .success-message {
+        display: block;
+        color: #27ae60;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+
+    .login-footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 12px;
+    }
+
+    .login-footer a {
+        color: #667eea;
+        text-decoration: none;
+    }
+
+    .checkbox {
+        display: flex;
+        align-items: center;
+    }
+
+    .checkbox input[type="checkbox"] {
+        margin-right: 8px;
+    }
+
+    .spinner {
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #667eea;
+        border-radius: 50%;
+        width: 14px;
+        height: 14px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        margin-left: 8px;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<script>
+    /**
+     * Secure Login Handler
+     * FIXES: 
+     * - Input validation
+     * - Password strength checking
+     * - CSRF token handling
+     * - Session management
+     * - Rate limiting feedback
+     */
+
+    class SecureLoginHandler {
+        constructor() {
+            this.form = document.getElementById('secure-login-form');
+            this.email = document.getElementById('email');
+            this.password = document.getElementById('password');
+            this.csrfToken = document.getElementById('csrf-token');
+            this.setup();
+        }
+
+        setup() {
+            this.form.addEventListener('submit', (e) => this.handleLogin(e));
+            this.password.addEventListener('input', () => this.checkPasswordStrength());
+            this.email.addEventListener('blur', () => this.validateEmail());
+            this.password.addEventListener('blur', () => this.validatePassword());
+        }
+
+        // SECURITY: Validate email format
+        validateEmail() {
+            const email = this.email.value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const errorEl = document.getElementById('email-error');
+
+            if (!emailRegex.test(email)) {
+                errorEl.textContent = 'Please enter a valid email address';
+                this.email.classList.add('error');
+                return false;
+            }
+
+            errorEl.textContent = '';
+            this.email.classList.remove('error');
+            return true;
+        }
+
+        // SECURITY: Validate password strength
+        validatePassword() {
+            const password = this.password.value;
+            const errorEl = document.getElementById('password-error');
+            const errors = [];
+
+            if (password.length < 8) {
+                errors.push('At least 8 characters');
+            }
+            if (!/[A-Z]/.test(password)) {
+                errors.push('Uppercase letters');
+            }
+            if (!/[a-z]/.test(password)) {
+                errors.push('Lowercase letters');
+            }
+            if (!/[0-9]/.test(password)) {
+                errors.push('Numbers');
+            }
+            if (!/[!@#$%^&*()_+\-=\[\]{};:,.<>?]/.test(password)) {
+                errors.push('Special characters');
+            }
+
+            if (errors.length > 0 && password.length > 0) {
+                errorEl.textContent = 'Password needs: ' + errors.join(', ');
+                this.password.classList.add('error');
+                return false;
+            }
+
+            errorEl.textContent = '';
+            this.password.classList.remove('error');
+            return true;
+        }
+
+        // SECURITY: Check password strength
+        checkPasswordStrength() {
+            const password = this.password.value;
+            const indicator = document.querySelector('.password-strength .strength-indicator');
+
+            if (!password) {
+                indicator.style.width = '0%';
+                return;
+            }
+
+            let strength = 0;
+
+            if (password.length >= 8) strength += 20;
+            if (password.length >= 12) strength += 20;
+            if (/[a-z]/.test(password)) strength += 15;
+            if (/[A-Z]/.test(password)) strength += 15;
+            if (/[0-9]/.test(password)) strength += 15;
+            if (/[!@#$%^&*()_+\-=\[\]{};:,.<>?]/.test(password)) strength += 15;
+
+            indicator.style.width = strength + '%';
+
+            if (strength < 40) {
+                indicator.style.background = '#e74c3c'; // Red
+            } else if (strength < 70) {
+                indicator.style.background = '#f39c12'; // Orange
+            } else {
+                indicator.style.background = '#27ae60'; // Green
+            }
+        }
+
+        // SECURITY: Handle login with CSRF token
+        async handleLogin(e) {
+            e.preventDefault();
+
+            // Validate inputs
+            if (!this.validateEmail() || !this.validatePassword()) {
+                this.showError('Please correct the errors above');
+                return;
+            }
+
+            const btn = this.form.querySelector('.login-btn');
+            const spinner = btn.querySelector('.spinner');
+            const btnText = btn.querySelector('.btn-text');
+
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+            btnText.style.opacity = '0.7';
+
+            try {
+                // SECURITY: Send login request with CSRF token
+                const response = await fetch('database/api.secure.php?action=login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': this.csrfToken.value,
+                        'Authorization': 'Bearer ' + this.csrfToken.value
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        email: this.email.value.trim(),
+                        password: this.password.value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // SECURITY: Store secure tokens
+                    localStorage.setItem('auth_token', data.token);
+                    localStorage.setItem('session_id', data.session_id);
+                    localStorage.setItem('csrf_token', data.csrf_token);
+                    localStorage.setItem('user_id', data.data.id);
+                    localStorage.setItem('user_type', data.data.user_type);
+
+                    // SECURITY: Clear sensitive data
+                    this.password.value = '';
+
+                    this.showSuccess('Login successful! Redirecting...');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                } else {
+                    if (response.status === 429) {
+                        this.showError('⏱️ Too many login attempts. Please try again later.');
+                    } else {
+                        this.showError(data.error || 'Login failed');
+                    }
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                this.showError('Network error. Please check your connection.');
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.style.opacity = '1';
+            }
+        }
+
+        showError(message) {
+            const errorEl = document.getElementById('login-error');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 5000);
+        }
+
+        showSuccess(message) {
+            const successEl = document.getElementById('login-success');
+            successEl.textContent = message;
+            successEl.style.display = 'block';
+        }
+    }
+
+    // Initialize when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+        new SecureLoginHandler();
+    });
+</script>

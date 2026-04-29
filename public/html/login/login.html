@@ -1,0 +1,79 @@
+<!-- Login Page -->
+<div id="loginPage" class="page active">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo-container">
+                    <img src="school-logo-removebg-preview.png" alt="Polytechnic College of Davao Del Sur"
+                        class="college-logo">
+                </div>
+                <h1>Polytechnic College of Davao Del Sur</h1>
+                <h2 class="subtitle">Lost & Found System</h2>
+                <p>Find what you've lost, return what you've found</p>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('login')">Login</button>
+                <button class="tab-btn" onclick="switchTab('signup')">Sign Up</button>
+            </div>
+
+            <!-- Error/Success Message Container -->
+            <div id="formMessage" class="form-message" style="display: none;"></div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="your.email@campus.edu" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="signupForm" class="auth-form" onsubmit="handleSignup(event)">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="signupName" placeholder="First Name Last Name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="signupEmail" placeholder="your.email@pcds.edu" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" id="signupPhone" placeholder="09XX-XXX-XXXX" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="signupPassword" placeholder="Create a password (min 6 characters)"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="signupRole" required>
+                        <option value="">Select your role</option>
+                        <option value="student">Student</option>
+                        <option value="staff">Staff</option>
+                        <option value="faculty">Faculty</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Sign Up
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

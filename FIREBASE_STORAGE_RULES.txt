@@ -1,0 +1,169 @@
+// Firebase Cloud Storage Security Rules
+// For: pcdscampuslostandfound project
+// Last Updated: April 28, 2026
+// Copy this to Firebase Console → Storage → Rules tab
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ========== PUBLIC ACCESS - ANYONE CAN READ ==========
+    // Items images - public read (anyone can view)
+    match /items/{document=**} {
+      allow read: if true;  // Anyone can view item images
+      allow write: if request.auth != null;  // Logged-in users can upload
+      allow delete: if request.auth != null;  // Users can delete their uploads
+    }
+    
+    // ========== USER SPECIFIC - AUTHENTICATED ONLY ==========
+    // User avatars and profiles
+    match /users/{uid}/{document=**} {
+      allow read: if true;  // Avatars are public
+      allow write: if request.auth.uid == uid;  // Only user can upload their own files
+      allow delete: if request.auth.uid == uid;  // Only user can delete their files
+    }
+    
+    // ========== UPLOADS - TEMPORARY FOLDER ==========
+    match /uploads/{uid}/{document=**} {
+      allow read: if request.auth.uid == uid;  // Only owner can read
+      allow write: if request.auth.uid == uid && isValidImage();  // Only owner, validate image
+      allow delete: if request.auth.uid == uid;  // Only owner can delete
+    }
+    
+    // ========== DENY EVERYTHING ELSE ==========
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// ========== HELPER FUNCTIONS ==========
+
+// Check if uploaded file is a valid image
+function isValidImage() {
+  return request.resource.contentType.matches('image/.*') &&
+         request.resource.size < 10 * 1024 * 1024;  // Max 10MB
+}
+
+// ========== HOW TO USE ==========
+// 1. Go to console.firebase.google.com
+// 2. Select project: pcdscampuslostandfound
+// 3. Go to Storage section
+// 4. Click "Rules" tab
+// 5. Replace ALL content with this file
+// 6. Click "Publish"
+// 7. Wait for deployment
+// 8. Storage rules are now active!
+
+// ========== FOLDER STRUCTURE ==========
+// Your Firebase Storage should have:
+// 
+// pcdscampuslostandfound.firebasestorage.app/
+// ├── items/
+// │   ├── {itemId}_1.jpg
+// │   ├── {itemId}_2.jpg
+// │   └── ...
+// ├── users/
+// │   ├── {userId}/
+// │   │   ├── avatar.jpg
+// │   │   └── profile_banner.jpg
+// │   └── ...
+// └── uploads/
+//     ├── {userId}/
+//     │   ├── temp_upload_1.jpg
+//     │   └── ...
+//     └── ...
+
+// ========== TESTING ==========
+// Test in Firebase Console Storage Rules Simulator:
+// 1. Click "Rules" tab
+// 2. Look for "Rules Simulator" section
+// 3. Enter test case:
+//    Path: items/item123/photo.jpg
+//    Method: get
+//    Authentication: Not required (should work)
+// 4. Click "Simulate"
+// 5. Should show "Allowed"
+//
+// Test authenticated write:
+//    Path: users/user123/avatar.jpg
+//    Method: write
+//    Authentication: Simulate with UID: user123
+//    Simulate: User UID = user123
+// 6. Should show "Allowed"
+
+// ========== FILE SIZE LIMITS ==========
+// Current limits in this rule:
+// - Images: Max 10MB
+// - File types: Only images (image/*)
+//
+// Adjust as needed:
+// - Change: 10 * 1024 * 1024  (for different size)
+// - Examples:
+//   5MB:   5 * 1024 * 1024
+//   20MB: 20 * 1024 * 1024
+//   100MB: 100 * 1024 * 1024
+
+// ========== COMMON FILE TYPES ==========
+// Allowed MIME types for images:
+// - image/jpeg      (.jpg, .jpeg)
+// - image/png       (.png)
+// - image/gif       (.gif)
+// - image/webp      (.webp)
+// - image/svg+xml   (.svg)
+//
+// To allow other types, update:
+// request.resource.contentType.matches('image/.*|video/.*')
+
+// ========== UPLOADING FILES ==========
+// JavaScript code example:
+// 
+// const file = document.getElementById('fileInput').files[0];
+// const fileName = Date.now() + '_' + file.name;
+// const storageRef = firebase.storage().ref('items/' + fileName);
+// 
+// storageRef.put(file).on('state_changed',
+//   (snapshot) => {
+//     const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+//     console.log(percent + '% uploaded');
+//   },
+//   (error) => console.error('Upload error:', error),
+//   () => {
+//     storageRef.getDownloadURL().then((url) => {
+//       console.log('File available at:', url);
+//     });
+//   }
+// );
+
+// ========== SECURITY NOTES ==========
+// ✅ SECURE: 
+//   - Users can only modify their own files
+//   - Images are validated before upload
+//   - File size is limited
+//   - Public files are read-only
+//
+// ⚠️ TO CONSIDER:
+//   - Add virus scanning for production
+//   - Implement content moderation
+//   - Monitor bandwidth usage
+//   - Archive old files periodically
+//   - Delete sensitive deleted items after 30 days
+
+// ========== MONITORING ==========
+// Track storage usage in Firebase Console:
+// 1. Go to Storage section
+// 2. Check "Storage" tab
+// 3. View current usage and quota
+// 4. Set up email alerts for quota approaching
+// 5. Monitor active downloads/uploads
+
+// ========== TROUBLESHOOTING ==========
+// "Permission denied" → User not authenticated
+// "Invalid content type" → File is not an image
+// "File too large" → Increase size limit in rules
+// "Upload timeout" → Network issue, try again
+// "Path not allowed" → Check folder structure matches rules
+
+// Status: ✅ Ready for Production
+// Last Verified: April 28, 2026

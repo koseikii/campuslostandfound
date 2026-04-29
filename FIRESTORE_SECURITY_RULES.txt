@@ -1,0 +1,177 @@
+// Firestore Security Rules for Campus Lost & Found System
+// Copy this entire content to Firebase Console → Firestore → Rules tab
+// Project: pcdscampuslostandfound
+// Last Updated: April 28, 2026
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ========== PUBLIC DATA - READABLE BY EVERYONE ==========
+    
+    // Items collection - public read, authenticated write
+    match /items/{itemId} {
+      allow read: if true;  // Anyone can view items
+      allow create: if request.auth != null;  // Logged-in users can post items
+      allow update: if request.auth.uid == resource.data.userId;  // Only owner can edit
+      allow delete: if request.auth.uid == resource.data.userId || isAdmin(request.auth.uid);  // Owner or admin can delete
+    }
+    
+    // Categories collection - public read
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin(request.auth.uid);  // Only admin can modify
+    }
+    
+    // Locations collection - public read
+    match /locations/{locationId} {
+      allow read: if true;
+      allow write: if isAdmin(request.auth.uid);  // Only admin can modify
+    }
+    
+    // ========== PRIVATE DATA - AUTHENTICATED ONLY ==========
+    
+    // Users collection - users can read/write their own data
+    match /users/{userId} {
+      allow read: if request.auth.uid == userId || isAdmin(request.auth.uid);
+      allow write: if request.auth.uid == userId;
+      
+      // Subcollection: User watchlist
+      match /watchlist/{itemId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+      
+      // Subcollection: User messages
+      match /messages/{messageId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+    }
+    
+    // Messages collection - authenticated users only
+    match /messages/{messageId} {
+      allow read: if request.auth != null && 
+                     (request.auth.uid == resource.data.senderId || 
+                      request.auth.uid == resource.data.receiverId ||
+                      isAdmin(request.auth.uid));
+      allow create: if request.auth != null && 
+                       request.auth.uid == request.resource.data.senderId;
+      allow update: if request.auth != null && 
+                       request.auth.uid == resource.data.receiverId;  // Only receiver can mark as read
+      allow delete: if request.auth != null &&
+                       (request.auth.uid == resource.data.senderId || 
+                        request.auth.uid == resource.data.receiverId);
+    }
+    
+    // Notifications collection - user specific
+    match /notifications/{userId} {
+      allow read, write: if request.auth.uid == userId || isAdmin(request.auth.uid);
+    }
+    
+    // Audit logs - admin only, users can only read their own
+    match /auditLogs/{logId} {
+      allow read: if request.auth != null && 
+                     (request.auth.uid == resource.data.userId || 
+                      isAdmin(request.auth.uid));
+      allow write: if isAdmin(request.auth.uid);
+    }
+    
+    // Admin users only
+    match /admins/{adminId} {
+      allow read: if isAdmin(request.auth.uid);
+      allow write: if false;  // Admins managed manually in Firebase Console
+    }
+    
+    // ========== REPORTS AND DELETED ITEMS ==========
+    
+    // Deleted items - archive for admin
+    match /deletedItems/{itemId} {
+      allow read: if isAdmin(request.auth.uid);
+      allow write: if isAdmin(request.auth.uid);
+    }
+    
+    // Reports - for admin review
+    match /reports/{reportId} {
+      allow read: if isAdmin(request.auth.uid) || 
+                     (request.auth != null && request.auth.uid == resource.data.submittedBy);
+      allow create: if request.auth != null;  // Any user can submit report
+      allow write: if isAdmin(request.auth.uid);
+    }
+    
+    // ========== HELPER FUNCTIONS ==========
+    
+    // Check if user is admin
+    function isAdmin(uid) {
+      return uid != null && exists(/databases/$(database)/documents/admins/$(uid));
+    }
+    
+    // Check if user owns the item
+    function isItemOwner(uid, itemId) {
+      return uid != null && 
+             uid == get(/databases/$(database)/documents/items/$(itemId)).data.userId;
+    }
+    
+    // Check if data is valid
+    function isValidItem(data) {
+      return data.title != null &&
+             data.description != null &&
+             data.category != null &&
+             data.location != null &&
+             data.status in ['lost', 'found'] &&
+             data.userId != null;
+    }
+    
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
+// ========== FIRESTORE COMPOSITE INDEXES ==========
+// If you get errors about missing indexes, add these in Firebase Console:
+//
+// Collection: items
+// - Indexes:
+//   1. status (Ascending), createdAt (Descending)
+//   2. category (Ascending), status (Ascending)
+//   3. location (Ascending), status (Ascending)
+//   4. userId (Ascending), createdAt (Descending)
+//   5. status (Ascending), category (Ascending), location (Ascending)
+//
+// Collection: messages
+// - Indexes:
+//   1. senderId (Ascending), createdAt (Descending)
+//   2. receiverId (Ascending), isRead (Ascending), createdAt (Descending)
+//   3. conversationId (Ascending), createdAt (Descending)
+
+// ========== HOW TO USE ==========
+// 1. Go to console.firebase.google.com
+// 2. Select project: pcdscampuslostandfound
+// 3. Click Cloud Firestore
+// 4. Click "Rules" tab
+// 5. Copy ALL content from this file
+// 6. Paste into the Rules editor
+// 7. Click "Publish"
+// 8. Wait for deployment (usually 1-2 minutes)
+// 9. Rules are now active!
+
+// ========== TESTING RULES IN FIREBASE CONSOLE ==========
+// Use the Firestore Rules Simulator:
+// 1. Click "Rules" tab
+// 2. Scroll down to "Rules Playground"
+// 3. Fill in:
+//    - Collection Path: items
+//    - Document ID: test_item
+//    - Operation: get
+//    - Authentication: Check "Simulate authenticated request" 
+//    - UID: any_user_id
+// 4. Click "Run"
+// 5. Should show green "Allowed" if rules are correct
+
+// ========== NOTES ==========
+// - Replace 'admin' check with actual admin collection
+// - For development/testing, you can use more permissive rules
+// - Always review rules before production
+// - Monitor quota usage in Firebase Console
+// - Keep rules updated as app features expand

@@ -573,8 +573,44 @@ function createReportItem(title, category, description, location, date, imageDat
         if (result.success && result.data) {
             // Add to local items with ID from backend
             newItem.id = result.data.id;
+            newItem.firebaseId = result.data.id;
             checkMatches(newItem);
             items.unshift(newItem);
+
+            // 🔥 ALSO SAVE TO FIREBASE IMMEDIATELY
+            const firebaseData = {
+                title: title,
+                description: description,
+                category_id: categoryId,
+                item_type: currentReportType,
+                location_id: locationId,
+                user_id: currentUser.id,
+                uid: currentUser.uid || currentUser.id,
+                userId: currentUser.id,
+                userName: currentUser.name || 'Unknown User',
+                userEmail: currentUser.email || 'not provided',
+                userPhone: currentUser.phone || 'not provided',
+                userRole: currentUser.role || 'user',
+                status: currentReportType,
+                resolved: false,
+                matched: false,
+                image_url: imageData,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            firebaseAddDocument('items', firebaseData).then(fbResult => {
+                if (fbResult.success) {
+                    console.log('✅ Item also saved to Firebase:', fbResult.id);
+                    // Update the item with Firebase ID for future syncing
+                    newItem.firebaseId = fbResult.id;
+                    saveData();
+                } else {
+                    console.warn('⚠️ Item saved to local database but Firebase save failed:', fbResult.error);
+                }
+            }).catch(fbErr => {
+                console.warn('⚠️ Firebase save error (non-blocking):', fbErr);
+            });
 
             // Log audit action for item creation
             if (typeof logAuditAction === 'function') {
